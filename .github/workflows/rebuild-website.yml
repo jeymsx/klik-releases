@@ -1,0 +1,27 @@
+# When a release is published (or its notes are edited) here, ask Vercel to rebuild the website,
+# get-imposr.vercel.app, so the pages it builds carry the new release: version, size, date, download links and
+# the changelog. Needs the VERCEL_DEPLOY_HOOK secret (Settings → Secrets and variables → Actions); without it,
+# this does nothing. Run it by hand from the Actions tab too.
+name: Rebuild the website
+
+on:
+  release:
+    types: [published, edited]
+  workflow_dispatch:
+
+jobs:
+  rebuild:
+    # the tutorial videos' release isn't an app version: no rebuild for it
+    if: github.event_name == 'workflow_dispatch' || github.event.release.tag_name != 'tutorials'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the Vercel deploy hook
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "No VERCEL_DEPLOY_HOOK secret yet, so nothing to do."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK"
+          echo "Vercel is rebuilding the website."
